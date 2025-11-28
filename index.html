@@ -52,9 +52,6 @@
             </p>
         </div>
 
-        <!-- Message Area -->
-        <div id="messageArea" class="text-center mb-4 min-h-[1.5em]"></div>
-
         <!-- Encoder Section -->
         <div class="mb-6">
             <h2 class="text-xl font-semibold mb-3 text-gray-800">1. Encode Link to RNA</h2>
@@ -63,6 +60,8 @@
             <button id="encodeButton" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors mt-3">
                 Encode
             </button>
+            <!-- Encoder Message Area -->
+            <div id="encodeMessageArea" class="text-center mt-2 min-h-[1.5em] text-sm font-medium"></div>
             
             <label for="rnaOutput" class="block text-sm font-medium text-gray-700 mt-4 mb-1">Generated RNA Sequence</label>
             <textarea id="rnaOutput" rows="4" class="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none" readonly placeholder="RNA sequence will appear here..."></textarea>
@@ -82,6 +81,8 @@
             <button id="decodeButton" class="w-full bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition-colors mt-3">
                 Decode
             </button>
+            <!-- Decoder Message Area -->
+            <div id="decodeMessageArea" class="text-center mt-2 min-h-[1.5em] text-sm font-medium"></div>
 
             <label class="block text-sm font-medium text-gray-700 mt-4 mb-1">Unveiled Link</label>
             <div id="decodedLinkOutput" class="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 min-h-[5em]">
@@ -89,7 +90,7 @@
             </div>
         </div>
 
-        <!-- Donation Section (New Logic) -->
+        <!-- Donation Section -->
         <div class="mt-8 pt-6 border-t border-gray-200 flex flex-col items-center">
             <p class="text-xs text-gray-400 mb-2 uppercase tracking-wider font-semibold">Support the Project</p>
             <a href="https://www.paypal.com/donate/?business=6EN68NHUTM2KQ&no_recurring=0&item_name=Thanks+for+your+support+Amigo%21&currency_code=USD" target="_blank" rel="noopener noreferrer" class="block w-32 h-32 bg-white p-2 rounded-xl border border-gray-200 hover:shadow-md hover:scale-105 transition-all cursor-pointer" title="Scan or Click to Donate">
@@ -116,28 +117,25 @@
         const decodeButton = document.getElementById('decodeButton');
         const decodedLinkOutput = document.getElementById('decodedLinkOutput');
         
-        const messageArea = document.getElementById('messageArea');
+        const encodeMessageArea = document.getElementById('encodeMessageArea');
+        const decodeMessageArea = document.getElementById('decodeMessageArea');
 
         // --- Mappings ---
-        // 00 -> A (Adenine)
-        // 01 -> U (Uracil)
-        // 10 -> G (Guanine)
-        // 11 -> C (Cytosine)
         const binaryToRna = { '00': 'A', '01': 'U', '10': 'G', '11': 'C' };
         const rnaToBinary = { 'A': '00', 'U': '01', 'G': '10', 'C': '11' };
 
         // --- Helper for showing messages ---
-        function showMessage(text, isError = false) {
-            messageArea.textContent = text;
-            messageArea.className = isError 
-                ? 'text-center mb-4 min-h-[1.5em] text-red-600' 
-                : 'text-center mb-4 min-h-[1.5em] text-green-600';
+        function showMessage(element, text, isError = false) {
+            element.textContent = text;
+            element.className = isError 
+                ? 'text-center mt-2 min-h-[1.5em] text-sm font-medium text-red-600' 
+                : 'text-center mt-2 min-h-[1.5em] text-sm font-medium text-green-600';
             
             // Clear message after 3 seconds
             setTimeout(() => {
-                if (messageArea.textContent === text) {
-                    messageArea.textContent = '';
-                    messageArea.className = 'text-center mb-4 min-h-[1.5em]';
+                if (element.textContent === text) {
+                    element.textContent = '';
+                    element.className = 'text-center mt-2 min-h-[1.5em] text-sm font-medium';
                 }
             }, 3000);
         }
@@ -146,7 +144,7 @@
         function encodeUrl() {
             const url = urlInput.value;
             if (!url) {
-                showMessage('Please enter a URL to encode.', true);
+                showMessage(encodeMessageArea, 'Please enter a URL to encode.', true);
                 return;
             }
 
@@ -156,10 +154,7 @@
                 let rnaSequence = '';
 
                 for (const byte of uint8Array) {
-                    // Convert byte (0-255) to 8-bit binary string
                     const binary = byte.toString(2).padStart(8, '0');
-                    
-                    // Convert 8-bit binary string to 4 RNA bases
                     rnaSequence += binaryToRna[binary.substring(0, 2)];
                     rnaSequence += binaryToRna[binary.substring(2, 4)];
                     rnaSequence += binaryToRna[binary.substring(4, 6)];
@@ -167,10 +162,10 @@
                 }
 
                 rnaOutput.value = rnaSequence;
-                showMessage('Encoding successful!', false);
+                showMessage(encodeMessageArea, 'Encoding successful!', false);
             } catch (e) {
                 console.error('Encoding error:', e);
-                showMessage('An error occurred during encoding.', true);
+                showMessage(encodeMessageArea, 'An error occurred during encoding.', true);
             }
         }
 
@@ -178,12 +173,12 @@
         function decodeRna() {
             const rna = rnaInput.value.trim().toUpperCase();
             if (!rna) {
-                showMessage('Please enter an RNA sequence to decode.', true);
+                showMessage(decodeMessageArea, 'Please enter an RNA sequence to decode.', true);
                 return;
             }
 
             if (rna.length % 4 !== 0) {
-                showMessage('Invalid sequence length. Must be a multiple of 4.', true);
+                showMessage(decodeMessageArea, 'Invalid sequence length. Must be a multiple of 4.', true);
                 return;
             }
 
@@ -194,12 +189,11 @@
                 for (const base of rna) {
                     const binaryPair = rnaToBinary[base];
                     if (binaryPair === undefined) {
-                        showMessage(`Invalid RNA base detected: '${base}'. Only A, U, G, C allowed.`, true);
+                        showMessage(decodeMessageArea, `Invalid RNA base detected: '${base}'. Only A, U, G, C allowed.`, true);
                         return;
                     }
                     binaryString += binaryPair;
 
-                    // When we have 8 bits, convert to a byte
                     if (binaryString.length === 8) {
                         const byte = parseInt(binaryString, 2);
                         byteArray.push(byte);
@@ -211,49 +205,41 @@
                 let url = decoder.decode(new Uint8Array(byteArray));
 
                 // --- URL Validation ---
-                // If the URL doesn't have a protocol, browsers treat it as a relative path.
-                // We must add one for it to be an external link.
                 if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                    // Basic check to see if it looks like a domain vs. just text
                     if (url.includes('.') && !url.includes(' ')) {
                         url = 'https://' + url;
                     }
                 }
                 
-                // Display the decoded link and a "Go to Site" button
-                decodedLinkOutput.innerHTML = ''; // Clear previous
-                decodedLinkOutput.className = 'w-full p-3 border border-gray-200 rounded-lg bg-gray-50 min-h-[5em]'; // Reset styles
+                // Display the decoded link and a "Copy" button
+                decodedLinkOutput.innerHTML = ''; 
+                decodedLinkOutput.className = 'w-full p-3 border border-gray-200 rounded-lg bg-gray-50 min-h-[5em]';
 
-                // Create text element for the URL
                 const urlText = document.createElement('p');
-                urlText.textContent = url; // Show the (now validated) URL
-                urlText.className = 'text-gray-800 break-all mb-3'; // Non-clickable text
+                urlText.textContent = url;
+                urlText.className = 'text-gray-800 break-all mb-3';
 
-                // Create a "Copy" button
                 const copyLinkButton = document.createElement('button');
                 copyLinkButton.textContent = 'Copy Link';
                 copyLinkButton.className = 'inline-block bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors';
 
-                // Add a click listener to copy the URL
-                const finalUrl = url; // Store URL for the closure
+                const finalUrl = url;
                 copyLinkButton.addEventListener('click', () => {
-                    // Use the 'execCommand' method as it's more robust in iframes
-                    // than navigator.clipboard
                     const tempInput = document.createElement('textarea');
                     tempInput.style.position = 'absolute';
-                    tempInput.style.left = '-9999px'; // Move it off-screen
+                    tempInput.style.left = '-9999px';
                     tempInput.value = finalUrl;
                     
                     document.body.appendChild(tempInput);
                     tempInput.select();
-                    tempInput.setSelectionRange(0, 99999); // For mobile
+                    tempInput.setSelectionRange(0, 99999);
                     
                     try {
                         document.execCommand('copy');
-                        showMessage('Link copied to clipboard!', false);
+                        showMessage(decodeMessageArea, 'Link copied to clipboard!', false);
                     } catch (e) {
                         console.error('Copy failed:', e);
-                        showMessage('Could not copy link. Please copy it manually.', true);
+                        showMessage(decodeMessageArea, 'Could not copy link. Please copy it manually.', true);
                     }
                     
                     document.body.removeChild(tempInput);
@@ -263,40 +249,36 @@
                 decodedLinkOutput.appendChild(urlText);
                 decodedLinkOutput.appendChild(copyLinkButton);
 
-                showMessage('Decoding successful!', false);
+                showMessage(decodeMessageArea, 'Decoding successful!', false);
             } catch (e) {
                 console.error('Decoding error:', e);
-                // This catch block handles errors from TextDecoder (e.g., invalid UTF-8)
-                showMessage('Decoding error. The sequence may be invalid or corrupt.', true);
+                showMessage(decodeMessageArea, 'Decoding error. The sequence may be invalid or corrupt.', true);
             }
         }
 
-        // --- Copy to Clipboard Logic ---
+        // --- Copy to Clipboard Logic (Encoder) ---
         function copyToClipboard() {
             const sequence = rnaOutput.value;
             if (!sequence) {
-                showMessage('Nothing to copy.', true);
+                showMessage(encodeMessageArea, 'Nothing to copy.', true);
                 return;
             }
 
-            // Select the text
             rnaOutput.select();
-            rnaOutput.setSelectionRange(0, 99999); // For mobile devices
+            rnaOutput.setSelectionRange(0, 99999); 
 
             try {
-                // Use document.execCommand for compatibility
                 const successful = document.execCommand('copy');
                 if (successful) {
-                    showMessage('Copied to clipboard!', false);
+                    showMessage(encodeMessageArea, 'Copied to clipboard!', false);
                 } else {
-                    showMessage('Failed to copy.', true);
+                    showMessage(encodeMessageArea, 'Failed to copy.', true);
                 }
             } catch (err) {
                 console.error('Fallback: Oops, unable to copy', err);
-                showMessage('Failed to copy.', true);
+                showMessage(encodeMessageArea, 'Failed to copy.', true);
             }
 
-            // Deselect the text
             window.getSelection().removeAllRanges();
         }
 
